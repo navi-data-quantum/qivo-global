@@ -1,13 +1,14 @@
 Executive Overview
 
-Qivo Global is a production-grade enterprise platform engineered to operate at global scale.
+Qivo Global is a scalable service platform engineered to operate across multiple countries and operational environments.
+
 Built with a scalability-first philosophy, it centralizes operational workflows, enforces structured access control, and enables multi-region deployment readiness from day one.
 
-The system is designed not as a simple CRUD application, but as a long-term infrastructure foundation capable of supporting international growth and complex business logic.
+The system is not designed as a simple CRUD application, but as a long-term infrastructure foundation capable of supporting international growth, financial operations, intelligent automation, and complex business logic.
 
 Architectural Highlights
 
-Multi-tenant SaaS foundation
+Multi-tenant SaaS-ready architecture
 
 Modular service-oriented backend
 
@@ -17,10 +18,20 @@ Globalized relational database schema (countries, regions, currencies, timezones
 
 Role-Based Access Control (RBAC)
 
-Infrastructure-ready deployment model
+Infrastructure-ready containerized deployment model
 
 System Architecture
-<p align="center"> <table> <tr> <td align="center"><b>Presentation Layer</b> ![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)</td> <td align="center">Reactive frontend interface designed for scalability and clarity</td> </tr> <tr> <td align="center"><b>Application Layer</b> ![Express.js](https://img.shields.io/badge/Express.js-000000?style=flat&logo=express&logoColor=white)</td> <td align="center">Secure RESTful backend with modular domain structure</td> </tr> <tr> <td align="center"><b>Data Layer</b> ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=flat&logo=postgresql&logoColor=white)</td> <td align="center">Normalized PostgreSQL schema optimized for performance and integrity</td> </tr> <tr> <td align="center"><b>Security Layer</b> ![JWT](https://img.shields.io/badge/JWT-000000?style=flat&logo=jsonwebtokens&logoColor=white)</td> <td align="center">Authentication, authorization, and RBAC enforcement</td> </tr> <tr> <td align="center"><b>Deployment Layer</b> ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white) ![Nginx](https://img.shields.io/badge/Nginx-009639?style=flat&logo=nginx&logoColor=white)</td> <td align="center">Container-ready infrastructure with production alignment</td> </tr> </table> </p>
+Layer	Technology	Description
+Presentation Layer	
+	Reactive frontend interface designed for scalability and clarity
+Application Layer	
+	Secure RESTful backend with modular domain structure
+Data Layer	
+	Normalized relational schema optimized for performance and integrity
+Security Layer	
+	Authentication, authorization, and RBAC enforcement
+Deployment Layer	
+	Container-ready infrastructure aligned for production environments
 Core Capabilities
 
 Identity & Access Governance
@@ -39,11 +50,11 @@ Scalable Relational Data Modeling
 
 Backend Domains & Tables
 
-Qivo Global backend consists of 87+ relational tables grouped by operational domains:
+Qivo Global backend consists of 87+ relational tables organized into structured operational domains:
 
 Identity & Access Domain
 
-users, roles, user_roles, user_profiles, user_tokens, device_sessions, user_settings, audit_logs
+users, roles, user_roles, user_profiles, user_tokens, device_sessions, user_settings, audit_logs, user_devices, user_subscriptions
 
 Financial & Wallet Domain
 
@@ -51,7 +62,7 @@ wallets, wallet_transactions, wallet_topups, wallet_withdrawals, wallet_limits, 
 
 Booking & Services Domain
 
-services, service_images, service_accessibility, service_trust_scores, bookings, booking_payments, booking_statuses, provider_slots, provider_exceptions, reviews
+services, service_images, service_accessibility, service_trust_scores, bookings, booking_payments, booking_statuses, provider_slots, provider_exceptions, reviews, categories, subcategories
 
 AI & Intelligence Domain
 
@@ -73,7 +84,7 @@ Engineering Principles
 
 Database normalization and referential integrity
 
-Clear separation of concerns across layers
+Clear separation of concerns across architectural layers
 
 Infrastructure scalability by design
 
@@ -95,4 +106,4 @@ Performance optimization at scale
 
 Advanced analytics and AI integration
 
-Enterprise-grade evolution and ecosystem growth
+Enterprise-grade ecosystem evolution
