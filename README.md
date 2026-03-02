@@ -1,109 +1,102 @@
-Executive Overview
+Qivo Global
+<p align="center"> <b>Scalable • Multi-Tenant • Infrastructure-Ready</b> </p> <p align="center"> <img src="https://img.shields.io/badge/Backend-Node.js-black?style=flat-square&logo=node.js" /> <img src="https://img.shields.io/badge/Database-PostgreSQL-336791?style=flat-square&logo=postgresql" /> <img src="https://img.shields.io/badge/Frontend-React-61DAFB?style=flat-square&logo=react" /> <img src="https://img.shields.io/badge/Deployment-Docker-2496ED?style=flat-square&logo=docker" /> </p>
+Overview
 
-Qivo Global is a scalable service platform engineered to operate across multiple countries and operational environments.
+Qivo Global is a multi tenant service platform designed to operate across countries, currencies, and timezones.
 
-Built with a scalability-first philosophy, it centralizes operational workflows, enforces structured access control, and enables multi-region deployment readiness from day one.
+It centralizes operational workflows, enforces structured access control, and provides a scalable backend foundation ready for production environments.
 
-The system is not designed as a simple CRUD application, but as a long-term infrastructure foundation capable of supporting international growth, financial operations, intelligent automation, and complex business logic.
+The system is built as long-term infrastructure rather than a simple CRUD application.
 
-Architectural Highlights
+Architecture
+Presentation Layer
 
-Multi-tenant SaaS-ready architecture
+React based frontend designed for clarity and scalability.
 
-Modular service-oriented backend
+Application Layer
 
-Production-ready RESTful API layer
+Modular Express.js backend exposing secure REST APIs.
 
-Globalized relational database schema (countries, regions, currencies, timezones)
+Data Layer
 
-Role-Based Access Control (RBAC)
+Normalized PostgreSQL schema with strong referential integrity.
 
-Infrastructure-ready containerized deployment model
+Security Layer
 
-System Architecture
-Layer	Technology	Description
-Presentation Layer	
-	Reactive frontend interface designed for scalability and clarity
-Application Layer	
-	Secure RESTful backend with modular domain structure
-Data Layer	
-	Normalized relational schema optimized for performance and integrity
-Security Layer	
-	Authentication, authorization, and RBAC enforcement
-Deployment Layer	
-	Container-ready infrastructure aligned for production environments
+JWT based authentication with Role-Based Access Control (RBAC).
+
+Deployment Layer
+
+Containerized infrastructure using Docker and Nginx.
+
 Core Capabilities
 
-Identity & Access Governance
+Identity and Access Governance
 
-Service and Resource Lifecycle Management
+Intelligent Booking and Scheduling
 
-Intelligent Booking & Scheduling Engine
+Multi-Country and Multi-Timezone Support
 
-Multi-Country & Multi-Timezone Operational Support
+Currency-Aware Financial Transactions
 
-Currency-Aware Transaction Architecture
+Real-Time Communication and Notifications
 
-Secure and Validated API Communication
+AI-Driven Insights and Fraud Detection
 
-Scalable Relational Data Modeling
+Backend Domain Structure
 
-Backend Domains & Tables
+The backend contains 87+ relational tables organized into operational domains.
 
-Qivo Global backend consists of 87+ relational tables organized into structured operational domains:
+Identity and Access
 
-Identity & Access Domain
+Users, roles, sessions, tokens, audit logs.
 
-users, roles, user_roles, user_profiles, user_tokens, device_sessions, user_settings, audit_logs, user_devices, user_subscriptions
+Financial and Wallet
 
-Financial & Wallet Domain
+Wallets, transactions, payments, refunds, commissions.
 
-wallets, wallet_transactions, wallet_topups, wallet_withdrawals, wallet_limits, payments, refunds, platform_commissions, cashback_rewards, transaction_statuses
+Booking and Services
 
-Booking & Services Domain
+Services, bookings, provider slots, reviews, categories.
 
-services, service_images, service_accessibility, service_trust_scores, bookings, booking_payments, booking_statuses, provider_slots, provider_exceptions, reviews, categories, subcategories
+AI and Intelligence
 
-AI & Intelligence Domain
+User behavior logs, fraud checks, AI interactions, reports.
 
-ai_models, ai_user_interactions, ai_feedback, ai_budget_profiles, fraud_checks, reports, user_behavior_logs
+Globalization and Geo
 
-Globalization & Geo Domain
+Countries, regions, cities, timezones, currencies, languages.
 
-countries, regions, subregions, cities, timezones, currencies, exchange_rates, languages, country_languages, official_iso3166, spatial_ref_sys
+Communication
 
-Communication Domain
+Chat sessions, messages, notifications, conversations.
 
-chat_sessions, chat_messages, chat_reactions, chat_attachments, conversations, notifications, notification_templates
+Compliance and Verification
 
-Compliance & Verification Domain
-
-kyc_verifications, provider_verifications, merchant_qr_codes, merchants
+KYC verification, provider verification, merchant QR codes.
 
 Engineering Principles
 
-Database normalization and referential integrity
-
-Clear separation of concerns across architectural layers
+Clear separation of concerns
 
 Infrastructure scalability by design
 
-Security-first backend implementation
+Security first backend implementation
 
 Maintainable and extensible code structure
 
-Long-term architectural sustainability
+Long term architectural sustainability
 
 Strategic Direction
 
-Qivo Global is positioned as an infrastructure-level system prepared for:
+Qivo Global is designed to support:
 
 High availability environments
 
-Cross-border operational expansion
+Cross border operational expansion
 
 Performance optimization at scale
 
 Advanced analytics and AI integration
 
-Enterprise-grade ecosystem evolution
+Enterprise grade ecosystem evolution
