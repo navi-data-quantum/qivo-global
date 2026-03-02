@@ -1,102 +1,81 @@
 Qivo Global
-<p align="center"> <b>Scalable • Multi-Tenant • Infrastructure ready</b> </p> <p align="center"> <img src="https://img.shields.io/badge/Backend-Node.js-black?style=flat-square&logo=node.js" /> <img src="https://img.shields.io/badge/Database-PostgreSQL-336791?style=flat-square&logo=postgresql" /> <img src="https://img.shields.io/badge/Frontend-React-61DAFB?style=flat-square&logo=react" /> <img src="https://img.shields.io/badge/Deployment-Docker-2496ED?style=flat-square&logo=docker" /> </p>
-Overview
+<p align="center"> <b>Infrastructure level Service Platform</b> </p> <p align="center"> <img src="https://img.shields.io/badge/Backend-Node.js-black?style=flat-square&logo=node.js" /> <img src="https://img.shields.io/badge/Database-PostgreSQL-336791?style=flat-square&logo=postgresql" /> <img src="https://img.shields.io/badge/Frontend-React-61DAFB?style=flat-square&logo=react" /> <img src="https://img.shields.io/badge/Deployment-Docker-2496ED?style=flat-square&logo=docker" /> </p>
+Product Overview
 
-Qivo Global is a multi tenant service platform designed to operate across countries, currencies, and timezones.
+Qivo Global is a multi tenant platform designed to power service-based ecosystems across regions.
 
-It centralizes operational workflows, enforces structured access control, and provides a scalable backend foundation ready for production environments.
+It provides a structured backend foundation for identity management, financial processing, booking orchestration, communication workflows, and international operations.
 
-The system is built as long-term infrastructure rather than a simple CRUD application.
+The architecture is built for long term scalability, operational integrity, and production grade deployment environments.
 
-Architecture
-Presentation Layer
-
-React based frontend designed for clarity and scalability.
-
+Platform Architecture
 Application Layer
 
-Modular Express.js backend exposing secure REST APIs.
+A modular Node.js and Express-based backend exposing secure REST APIs with clear domain separation.
 
 Data Layer
 
-Normalized PostgreSQL schema with strong referential integrity.
+A normalized PostgreSQL schema composed of 87+ relational tables structured across operational domains.
 
 Security Layer
 
-JWT based authentication with Role Based Access Control (RBAC).
+JWT based authentication with Role-Based Access Control (RBAC) and session management.
 
-Deployment Layer
+Infrastructure Layer
 
-Containerized infrastructure using Docker and Nginx.
+Containerized deployment using Docker and Nginx, aligned for scalable environments.
 
-Core Capabilities
-
-Identity and Access Governance
-
-Intelligent Booking and Scheduling
-
-Multi Country and Multi Timezone Support
-
-Currency-Aware Financial Transactions
-
-Real Time Communication and Notifications
-
-AI Driven Insights and Fraud Detection
-
-Backend Domain Structure
-
-The backend contains 87+ relational tables organized into operational domains.
-
+Operational Domains
 Identity and Access
 
-Users, roles, sessions, tokens, audit logs.
+User accounts, role management, session control, audit logging.
 
-Financial and Wallet
+Financial Infrastructure
 
-Wallets, transactions, payments, refunds, commissions.
+Wallet management, transactions, payment tracking, refunds, commission logic.
 
-Booking and Services
+Booking and Service Management
 
-Services, bookings, provider slots, reviews, categories.
+Service lifecycle, provider availability, scheduling logic, review systems.
 
-AI and Intelligence
+AI and Behavioral Intelligence
 
-User behavior logs, fraud checks, AI interactions, reports.
+Interaction tracking, fraud detection, reporting, analytical models.
 
-Globalization and Geo
+Globalization and Geo Infrastructure
 
-Countries, regions, cities, timezones, currencies, languages.
+Countries, regions, cities, currencies, exchange rates, timezones, languages.
 
-Communication
+Communication Systems
 
-Chat sessions, messages, notifications, conversations.
+Chat sessions, messaging, notification delivery, conversation tracking.
 
 Compliance and Verification
 
-KYC verification, provider verification, merchant QR codes.
+KYC workflows, provider verification, merchant validation.
 
 Engineering Principles
 
-Clear separation of concerns
+Domain driven structure
+
+Referential integrity and strict normalization
+
+Security first backend design
 
 Infrastructure scalability by design
 
-Security first backend implementation
+Maintainable and extensible codebase
 
-Maintainable and extensible code structure
+Strategic Positioning
 
-Long term architectural sustainability
+Qivo Global is positioned as an infrastructure-ready system capable of supporting:
 
-Strategic Direction
+Multi country expansion
 
-Qivo Global is designed to support:
+High availability deployment models
 
-High availability environments
+Financially integrated service ecosystems
 
-Cross border operational expansion
+AI driven operational insights
 
-Performance optimization at scale
-
-Advanced analytics and AI integration
-
-Enterprise grade ecosystem evolution
+Enterprise grade platform evolution
