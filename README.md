@@ -1,5 +1,5 @@
 Qivo Global
-<p align="center"> <b>Scalable • Multi-Tenant • Infrastructure-Ready</b> </p> <p align="center"> <img src="https://img.shields.io/badge/Backend-Node.js-black?style=flat-square&logo=node.js" /> <img src="https://img.shields.io/badge/Database-PostgreSQL-336791?style=flat-square&logo=postgresql" /> <img src="https://img.shields.io/badge/Frontend-React-61DAFB?style=flat-square&logo=react" /> <img src="https://img.shields.io/badge/Deployment-Docker-2496ED?style=flat-square&logo=docker" /> </p>
+<p align="center"> <b>Scalable • Multi-Tenant • Infrastructure ready</b> </p> <p align="center"> <img src="https://img.shields.io/badge/Backend-Node.js-black?style=flat-square&logo=node.js" /> <img src="https://img.shields.io/badge/Database-PostgreSQL-336791?style=flat-square&logo=postgresql" /> <img src="https://img.shields.io/badge/Frontend-React-61DAFB?style=flat-square&logo=react" /> <img src="https://img.shields.io/badge/Deployment-Docker-2496ED?style=flat-square&logo=docker" /> </p>
 Overview
 
 Qivo Global is a multi tenant service platform designed to operate across countries, currencies, and timezones.
@@ -23,7 +23,7 @@ Normalized PostgreSQL schema with strong referential integrity.
 
 Security Layer
 
-JWT based authentication with Role-Based Access Control (RBAC).
+JWT based authentication with Role Based Access Control (RBAC).
 
 Deployment Layer
 
@@ -35,13 +35,13 @@ Identity and Access Governance
 
 Intelligent Booking and Scheduling
 
-Multi-Country and Multi-Timezone Support
+Multi Country and Multi Timezone Support
 
 Currency-Aware Financial Transactions
 
-Real-Time Communication and Notifications
+Real Time Communication and Notifications
 
-AI-Driven Insights and Fraud Detection
+AI Driven Insights and Fraud Detection
 
 Backend Domain Structure
 
