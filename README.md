@@ -68,7 +68,7 @@ Maintainable and extensible codebase
 
 Strategic Positioning
 
-Qivo Global is positioned as an infrastructure-ready system capable of supporting:
+Qivo Global is positioned as an infrastructure ready system capable of supporting:
 
 Multi country expansion
 
