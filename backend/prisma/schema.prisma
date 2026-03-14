@@ -1,0 +1,1241 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model accessibility_types {
+  id                          Int                           @id @default(autoincrement())
+  name                        String                        @db.VarChar(100)
+  description                 String?
+  icon                        String?                       @db.VarChar(100)
+  category                    String?                       @db.VarChar(50)
+  standard_code               String?                       @unique @db.VarChar(50)
+  accessibility_types_i18n    accessibility_types_i18n[]
+  service_accessibility       service_accessibility[]
+  service_accessibility_score service_accessibility_score[]
+  user_accessibility_profile  user_accessibility_profile[]
+}
+
+model accessibility_types_i18n {
+  id                  Int                  @id @default(autoincrement())
+  accessibility_id    Int?
+  language_code       String?              @db.VarChar(5)
+  name                String?              @db.VarChar(100)
+  description         String?
+  accessibility_types accessibility_types? @relation(fields: [accessibility_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([accessibility_id], map: "idx_accessibility_i18n_accessibility_id")
+}
+
+model ai_budget_profiles {
+  id             BigInt    @id @default(autoincrement())
+  user_id        Int?
+  monthly_budget Decimal?  @db.Decimal(18, 2)
+  travel_budget  Decimal?  @db.Decimal(18, 2)
+  updated_at     DateTime? @default(now()) @db.Timestamp(6)
+  users          users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_ai_budget_profiles_user_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model ai_feedback {
+  id                   Int                   @id @default(autoincrement())
+  interaction_id       Int?
+  rating               Int?
+  comment              String?
+  created_at           DateTime?             @default(now()) @db.Timestamptz(6)
+  ai_user_interactions ai_user_interactions? @relation(fields: [interaction_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model ai_models {
+  id                   Int                    @id @default(autoincrement())
+  name                 String                 @db.VarChar(100)
+  type                 String?                @db.VarChar(50)
+  version              String?                @db.VarChar(20)
+  description          String?
+  parameters           Json?
+  created_at           DateTime?              @default(now()) @db.Timestamptz(6)
+  ai_user_interactions ai_user_interactions[]
+
+  @@unique([name, version], map: "unique_model_version")
+  @@index([type], map: "idx_ai_models_type")
+}
+
+model ai_user_interactions {
+  id               Int           @id @default(autoincrement())
+  user_id          Int?
+  model_id         Int?
+  input            Json
+  output           Json
+  interaction_type String?       @db.VarChar(50)
+  created_at       DateTime?     @default(now()) @db.Timestamptz(6)
+  ai_feedback      ai_feedback[]
+  ai_models        ai_models?    @relation(fields: [model_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users            users?        @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model app_translations {
+  id               Int       @id @default(autoincrement())
+  language_code    String    @db.VarChar(5)
+  translation_key  String
+  translation_text String
+  languages        languages @relation(fields: [language_code], references: [code], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([language_code, translation_key])
+}
+
+model audit_logs {
+  id         Int       @id @default(autoincrement())
+  user_id    Int?
+  action     String    @db.VarChar(100)
+  table_name String?   @db.VarChar(100)
+  record_id  Int?
+  old_data   Json?
+  new_data   Json?
+  ip_address String?   @db.VarChar(50)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  users      users?    @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+
+  @@index([created_at], map: "idx_audit_date")
+  @@index([user_id], map: "idx_audit_user")
+  @@index([user_id, created_at(sort: Desc)], map: "idx_audit_user_date")
+}
+
+model availability {
+  id          Int       @id @default(autoincrement())
+  provider_id Int?
+  day_of_week Int       @db.SmallInt
+  start_time  DateTime  @db.Time(6)
+  end_time    DateTime  @db.Time(6)
+  valid_from  DateTime? @db.Date
+  valid_until DateTime? @db.Date
+  is_active   Boolean?  @default(true)
+  users       users?    @relation(fields: [provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([provider_id], map: "idx_availability_provider_id")
+}
+
+model booking_payments {
+  id                  BigInt               @id @default(autoincrement())
+  booking_id          Int?
+  transaction_id      BigInt?
+  amount              Decimal?             @db.Decimal(18, 2)
+  status              String?              @db.VarChar(20)
+  created_at          DateTime?            @default(now()) @db.Timestamp(6)
+  bookings            bookings?            @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  wallet_transactions wallet_transactions? @relation(fields: [transaction_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([booking_id], map: "idx_booking_payments_booking_id")
+  @@index([transaction_id], map: "idx_booking_payments_transaction_id")
+}
+
+model booking_statuses {
+  id   Int    @id @default(autoincrement())
+  name String @unique @db.VarChar(50)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bookings {
+  id                                                 Int                    @id @default(autoincrement())
+  user_id                                            Int
+  service_id                                         Int
+  booking_date                                       DateTime               @db.Timestamp(6)
+  status                                             String?                @default("confirmed") @db.VarChar(20)
+  created_at                                         DateTime?              @default(now()) @db.Timestamp(6)
+  updated_at                                         DateTime?              @default(now()) @db.Timestamp(6)
+  duration_minutes                                   Int
+  booked_price                                       Decimal                @db.Decimal(10, 2)
+  booked_currency                                    String                 @db.VarChar(3)
+  slot_id                                            Int?
+  provider_id                                        Int?
+  booking_payments                                   booking_payments[]
+  services                                           services               @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  provider_slots_bookings_slot_idToprovider_slots    provider_slots?        @relation("bookings_slot_idToprovider_slots", fields: [slot_id], references: [id], onUpdate: NoAction)
+  users_bookings_user_idTousers                      users                  @relation("bookings_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_bookings_provider_idTousers                  users?                 @relation("bookings_provider_idTousers", fields: [provider_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_bookings_provider")
+  platform_commissions                               platform_commissions[]
+  provider_slots_provider_slots_booking_idTobookings provider_slots[]       @relation("provider_slots_booking_idTobookings")
+  reviews                                            reviews[]
+
+  @@unique([user_id, service_id, booking_date], map: "unique_booking")
+  @@index([booking_date], map: "idx_bookings_date")
+  @@index([service_id], map: "idx_bookings_service")
+  @@index([service_id, booking_date(sort: Desc)], map: "idx_bookings_service_date")
+  @@index([user_id], map: "idx_bookings_user")
+  @@index([user_id, service_id, booking_date], map: "idx_bookings_user_service_date")
+  @@index([user_id, service_id, booking_date(sort: Desc)], map: "idx_bookings_user_service_date_desc")
+}
+
+model cashback_rewards {
+  id                  BigInt               @id @default(autoincrement())
+  user_id             Int?
+  transaction_id      BigInt?
+  amount              Decimal?             @db.Decimal(18, 2)
+  created_at          DateTime?            @default(now()) @db.Timestamp(6)
+  wallet_transactions wallet_transactions? @relation(fields: [transaction_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users               users?               @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([transaction_id], map: "idx_cashback_rewards_transaction_id")
+  @@index([user_id], map: "idx_cashback_rewards_user_id")
+}
+
+model categories {
+  id            Int             @id @default(autoincrement())
+  name          String          @unique(map: "categories_name_unique") @db.VarChar(100)
+  icon          String?
+  description   String?
+  is_active     Boolean?        @default(true)
+  created_at    DateTime?       @default(now()) @db.Timestamp(6)
+  services      services[]
+  subcategories subcategories[]
+}
+
+model chat_attachments {
+  id            Int            @id @default(autoincrement())
+  message_id    Int?
+  type          String         @db.VarChar(20)
+  url           String
+  size_kb       Int?
+  created_at    DateTime?      @default(now()) @db.Timestamp(6)
+  chat_messages chat_messages? @relation(fields: [message_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([message_id], map: "idx_chat_attachments_message")
+}
+
+model chat_deleted {
+  id            Int            @id @default(autoincrement())
+  message_id    Int?
+  deleted_by    Int?
+  deleted_at    DateTime?      @default(now()) @db.Timestamp(6)
+  reason        String?
+  users         users?         @relation(fields: [deleted_by], references: [id], onUpdate: NoAction)
+  chat_messages chat_messages? @relation(fields: [message_id], references: [id], onUpdate: NoAction)
+
+  @@index([deleted_by], map: "idx_chat_deleted_deleted_by")
+  @@index([message_id], map: "idx_chat_deleted_message")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model chat_messages {
+  id               Int                @id @default(autoincrement())
+  session_id       Int
+  sender_id        Int
+  content          String
+  is_free          Boolean?           @default(true)
+  created_at       DateTime?          @default(now()) @db.Timestamp(6)
+  cost             Decimal?           @default(0) @db.Decimal(10, 2)
+  status           String?            @default("sent") @db.VarChar(20)
+  type             String?            @default("text") @db.VarChar(20)
+  chat_attachments chat_attachments[]
+  chat_deleted     chat_deleted[]
+  users            users              @relation(fields: [sender_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  chat_reactions   chat_reactions[]
+
+  @@index([created_at(sort: Desc)], map: "idx_chat_messages_created")
+  @@index([sender_id], map: "idx_chat_messages_sender")
+  @@index([session_id], map: "idx_chat_messages_session")
+  @@index([session_id, sender_id, created_at], map: "idx_chat_messages_session_sender")
+  @@index([session_id, status, created_at(sort: Desc)], map: "idx_chat_messages_session_status")
+  @@index([status], map: "idx_chat_messages_status")
+}
+
+model chat_participants {
+  id            Int           @id @default(autoincrement())
+  session_id    Int
+  user_id       Int
+  role          String?       @default("member") @db.VarChar(20)
+  joined_at     DateTime?     @default(now()) @db.Timestamp(6)
+  left_at       DateTime?     @db.Timestamp(6)
+  last_read_at  DateTime?     @db.Timestamp(6)
+  muted_until   DateTime?     @db.Timestamp(6)
+  is_active     Boolean?      @default(true)
+  chat_sessions chat_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_chat_participants_session")
+  users         users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_chat_participants_user")
+
+  @@unique([session_id, user_id], map: "unique_session_user")
+  @@index([session_id, last_read_at], map: "idx_chat_participants_last_read")
+  @@index([session_id], map: "idx_chat_participants_session")
+  @@index([user_id], map: "idx_chat_participants_user")
+}
+
+model chat_reactions {
+  id            Int            @id @default(autoincrement())
+  message_id    Int?
+  user_id       Int?
+  emoji         String         @db.VarChar(10)
+  created_at    DateTime?      @default(now()) @db.Timestamp(6)
+  chat_messages chat_messages? @relation(fields: [message_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         users?         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([message_id, user_id, emoji])
+  @@index([message_id], map: "idx_chat_reactions_message")
+  @@index([message_id, emoji], map: "idx_chat_reactions_message_emoji")
+}
+
+model chat_sessions {
+  id                 Int                  @id @default(autoincrement())
+  message_count      Int?                 @default(0)
+  created_at         DateTime?            @default(now()) @db.Timestamp(6)
+  last_message_at    DateTime?            @db.Timestamp(6)
+  chat_participants  chat_participants[]
+  chat_typing_status chat_typing_status[]
+}
+
+model chat_typing_status {
+  session_id    Int
+  user_id       Int
+  is_typing     Boolean?      @default(false)
+  last_update   DateTime?     @default(now()) @db.Timestamp(6)
+  chat_sessions chat_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([session_id, user_id])
+}
+
+model cities {
+  id            BigInt                    @id @default(autoincrement())
+  name          String?                   @db.VarChar(100)
+  country_code  String?                   @db.Char(2)
+  population    BigInt?
+  is_capital    Boolean?                  @default(false)
+  lat           Float?
+  lon           Float?
+  geoname_id    BigInt?
+  timezone_name String?
+  region_id     Int?
+  subregion_id  Int?
+  geom          Unsupported("geography")?
+  countries     countries?                @relation(fields: [country_code], references: [code], onDelete: NoAction, onUpdate: NoAction)
+  timezones     timezones?                @relation(fields: [timezone_name], references: [name], onDelete: NoAction, onUpdate: NoAction, map: "fk_city_timezone")
+  services      services[]
+  users         users[]
+
+  @@unique([name, country_code], map: "unique_city_country")
+  @@index([country_code], map: "idx_cities_country")
+  @@index([lat, lon], map: "idx_cities_geo")
+  @@index([geom], map: "idx_cities_geom", type: Gist)
+  @@index([name], map: "idx_cities_name")
+  @@index([timezone_name], map: "idx_cities_timezone_name")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model countries {
+  code                       String                       @id @db.VarChar(2)
+  name                       String                       @db.VarChar(100)
+  name_local                 String?                      @db.VarChar(100)
+  region                     String?                      @db.VarChar(50)
+  subregion                  String?                      @db.VarChar(50)
+  currency_code              String                       @db.Char(3)
+  flag_emoji                 String?                      @db.VarChar(5)
+  capital_city               String?                      @db.VarChar(100)
+  population                 BigInt?
+  area_km2                   Decimal?                     @db.Decimal
+  created_at                 DateTime?                    @default(now()) @db.Timestamp(6)
+  updated_at                 DateTime?                    @default(now()) @db.Timestamp(6)
+  iso3_code                  String?                      @db.VarChar(3)
+  cities                     cities[]
+  currencies                 currencies                   @relation(fields: [currency_code], references: [code], onDelete: NoAction, onUpdate: NoAction)
+  country_languages          country_languages[]
+  country_official_languages country_official_languages[]
+  services                   services[]
+  users                      users[]
+
+  @@index([region, subregion], map: "idx_countries_region_subregion")
+}
+
+model country_full_info_final {
+  country_code  String      @id @db.Char(2)
+  country_name  String      @db.VarChar(100)
+  region        String?     @db.VarChar(50)
+  subregion     String?     @db.VarChar(50)
+  currency_code String      @db.Char(3)
+  language_code String?     @db.Char(2)
+  flag_emoji    String?     @db.VarChar(5)
+  capital_city  String?     @db.VarChar(100)
+  population    BigInt?
+  area_km2      Decimal?    @db.Decimal
+  region_id     Int?
+  subregion_id  Int?
+  created_at    DateTime?   @default(now()) @db.Timestamp(6)
+  updated_at    DateTime?   @default(now()) @db.Timestamp(6)
+  regions       regions?    @relation(fields: [region_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  subregions    subregions? @relation(fields: [subregion_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  currencies    currencies  @relation(fields: [currency_code], references: [code], map: "fk_country_full_info_currency")
+  languages     languages?  @relation(fields: [language_code], references: [code], onDelete: NoAction, onUpdate: NoAction, map: "fk_language")
+
+  @@index([currency_code], map: "idx_country_currency")
+  @@index([subregion_id], map: "idx_country_full_info_subregion_id")
+  @@index([language_code], map: "idx_country_language")
+  @@index([region_id], map: "idx_country_region")
+}
+
+model country_info {
+  country_code  String  @id @db.VarChar(2)
+  currency_code String? @db.VarChar(3)
+  language_code String? @db.VarChar(10)
+  flag_emoji    String? @db.VarChar(5)
+}
+
+model country_languages {
+  country_code     String    @db.VarChar(2)
+  language_code    String    @db.VarChar(50)
+  official         Boolean?  @default(false)
+  primary_language Boolean?  @default(false)
+  percentage       Decimal?  @db.Decimal(5, 2)
+  created_at       DateTime? @default(now()) @db.Timestamp(6)
+  dialect_of       String?   @db.VarChar(5)
+  historical       Boolean?  @default(false)
+  minority         Boolean?  @default(false)
+  regional         Boolean?  @default(false)
+  language_iso3    String?   @db.Char(3)
+  languages        languages @relation(fields: [language_code], references: [code], onDelete: NoAction, onUpdate: NoAction)
+  countries        countries @relation(fields: [country_code], references: [code], onDelete: Cascade, onUpdate: NoAction, map: "fk_country_languages_country")
+
+  @@id([country_code, language_code])
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model country_languages_global {
+  country_code    String? @db.VarChar(2)
+  country_name    String? @db.VarChar(100)
+  languages       String?
+  capital         String? @db.VarChar(100)
+  continent       String? @db.VarChar(50)
+  subregion       String? @db.VarChar(50)
+  currency_code   String? @db.Char(3)
+  currency_symbol String? @db.VarChar(10)
+
+  @@ignore
+}
+
+model country_official_languages {
+  country_code  String    @db.Char(2)
+  language_code String    @db.Char(3)
+  countries     countries @relation(fields: [country_code], references: [code], onDelete: NoAction, onUpdate: NoAction)
+  languages     languages @relation(fields: [language_code], references: [code], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([country_code, language_code])
+}
+
+model currencies {
+  code                                                      String                    @id @db.VarChar(3)
+  name                                                      String                    @db.VarChar(50)
+  symbol                                                    String?                   @db.VarChar(5)
+  symbol_new                                                String?                   @db.VarChar(50)
+  countries                                                 countries[]
+  country_full_info_final                                   country_full_info_final[]
+  exchange_rates_exchange_rates_base_currencyTocurrencies   exchange_rates[]          @relation("exchange_rates_base_currencyTocurrencies")
+  exchange_rates_exchange_rates_target_currencyTocurrencies exchange_rates[]          @relation("exchange_rates_target_currencyTocurrencies")
+  services                                                  services[]
+  users                                                     users[]
+  wallets                                                   wallets[]
+}
+
+model device_sessions {
+  id         BigInt    @id @default(autoincrement())
+  user_id    Int?
+  device_id  String?
+  ip_address String?
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  users      users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_device_sessions_user_id")
+}
+
+model entity_translations {
+  id               Int       @id @default(autoincrement())
+  entity_type      String    @db.VarChar(50)
+  entity_id        Int
+  field_name       String    @db.VarChar(50)
+  language_code    String    @db.VarChar(5)
+  translated_value String
+  languages        languages @relation(fields: [language_code], references: [code], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([entity_type, entity_id, field_name, language_code])
+}
+
+model exchange_rates {
+  id                                                    BigInt      @id @default(autoincrement())
+  base_currency                                         String?     @db.VarChar(10)
+  target_currency                                       String?     @db.VarChar(10)
+  rate                                                  Decimal?    @db.Decimal(18, 6)
+  updated_at                                            DateTime?   @default(now()) @db.Timestamp(6)
+  currencies_exchange_rates_base_currencyTocurrencies   currencies? @relation("exchange_rates_base_currencyTocurrencies", fields: [base_currency], references: [code], onDelete: NoAction, onUpdate: NoAction)
+  currencies_exchange_rates_target_currencyTocurrencies currencies? @relation("exchange_rates_target_currencyTocurrencies", fields: [target_currency], references: [code], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([base_currency], map: "idx_exchange_rates_base")
+  @@index([target_currency], map: "idx_exchange_rates_target")
+}
+
+model favorites {
+  id         Int       @id @default(autoincrement())
+  user_id    Int?
+  service_id Int?
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  services   services? @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users?    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, service_id], map: "idx_favorites_user_service")
+  @@index([user_id], map: "idx_favorites_user")
+}
+
+model fraud_checks {
+  id                  BigInt               @id @default(autoincrement())
+  transaction_id      BigInt?
+  risk_score          Int?
+  result              String?              @db.VarChar(20)
+  created_at          DateTime?            @default(now()) @db.Timestamp(6)
+  wallet_transactions wallet_transactions? @relation(fields: [transaction_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([transaction_id], map: "idx_fraud_checks_transaction_id")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model geonames_temp {
+  geonameid         Int?
+  name              String?
+  asciiname         String?
+  alternatenames    String?
+  latitude          String?
+  longitude         String?
+  feature_class     String?   @db.Char(1)
+  feature_code      String?
+  country_code      String?   @db.Char(2)
+  cc2               String?
+  admin1_code       String?
+  admin2_code       String?
+  admin3_code       String?
+  admin4_code       String?
+  population        BigInt?
+  elevation         String?
+  dem               String?
+  timezone          String?
+  modification_date DateTime? @db.Date
+
+  @@ignore
+}
+
+model kyc_verifications {
+  id              BigInt    @id @default(autoincrement())
+  user_id         Int?
+  document_type   String?   @db.VarChar(50)
+  document_number String?
+  status          String?   @db.VarChar(20)
+  verified_at     DateTime? @db.Timestamp(6)
+  users           users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_kyc_user_id")
+}
+
+model language_translations {
+  language_code String    @db.VarChar(5)
+  locale        String    @db.VarChar(5)
+  name          String    @db.VarChar(100)
+  languages     languages @relation(fields: [language_code], references: [code], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([language_code, locale])
+}
+
+model languages {
+  code                       String                       @id @db.VarChar(5)
+  name                       String                       @db.VarChar(200)
+  name_local                 String?                      @db.VarChar(200)
+  iso3                       String?                      @db.VarChar(3)
+  app_translations           app_translations[]
+  country_full_info_final    country_full_info_final[]
+  country_languages          country_languages[]
+  country_official_languages country_official_languages[]
+  entity_translations        entity_translations[]
+  language_translations      language_translations[]
+}
+
+model languages_iso3 {
+  iso3_code String  @id @db.VarChar(3)
+  name      String? @db.VarChar(150)
+  scope     String? @db.VarChar(1)
+  type      String? @db.VarChar(1)
+}
+
+model merchant_qr_codes {
+  id          BigInt     @id @default(autoincrement())
+  merchant_id BigInt?
+  qr_token    String?
+  created_at  DateTime?  @default(now()) @db.Timestamp(6)
+  merchants   merchants? @relation(fields: [merchant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model merchants {
+  id                  BigInt              @id @default(autoincrement())
+  user_id             Int?
+  business_name       String?             @db.VarChar(200)
+  verification_status String?             @db.VarChar(20)
+  created_at          DateTime?           @default(now()) @db.Timestamp(6)
+  merchant_qr_codes   merchant_qr_codes[]
+  users               users?              @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_merchants_user_id")
+}
+
+model notification_templates {
+  id   Int    @id @default(autoincrement())
+  code String @unique @db.VarChar(100)
+}
+
+model notifications {
+  id         Int       @id @default(autoincrement())
+  user_id    Int?
+  title      String
+  message    String
+  read       Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  type       String?   @db.VarChar(50)
+  link       String?
+  source_id  Int?
+  icon       String?   @db.VarChar(50)
+  priority   String?   @default("normal") @db.VarChar(20)
+  users      users?    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at], map: "idx_notifications_created")
+  @@index([user_id], map: "idx_notifications_user")
+  @@index([user_id, created_at(sort: Desc)], map: "idx_notifications_user_created")
+  @@index([user_id, read, created_at(sort: Desc)], map: "idx_notifications_user_read_created")
+}
+
+model official_iso {
+  iso2 String @id @db.VarChar(2)
+  iso3 String @db.VarChar(3)
+}
+
+model official_iso3166 {
+  iso2         String @id @db.Char(2)
+  iso3         String @unique @db.Char(3)
+  country_name String @db.VarChar(150)
+}
+
+model payments {
+  id             Int       @id @default(autoincrement())
+  user_id        Int?
+  service_id     Int?
+  amount         Decimal   @db.Decimal
+  currency       String?   @db.VarChar(10)
+  status         String?   @default("pending") @db.VarChar(20)
+  payment_method String?   @db.VarChar(50)
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+  transaction_id String?
+  services       services? @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users          users?    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)], map: "idx_payments_created")
+  @@index([service_id], map: "idx_payments_service_id")
+  @@index([status], map: "idx_payments_status")
+  @@index([status, created_at(sort: Desc)], map: "idx_payments_status_created")
+  @@index([user_id], map: "idx_payments_user")
+  @@index([user_id, status, created_at(sort: Desc)], map: "idx_payments_user_status_created")
+}
+
+model platform_commissions {
+  id         BigInt    @id @default(autoincrement())
+  booking_id Int?
+  percentage Decimal?  @db.Decimal(5, 2)
+  amount     Decimal?  @db.Decimal(18, 2)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  bookings   bookings? @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([booking_id], map: "idx_platform_commissions_booking_id")
+}
+
+model provider_exceptions {
+  id             Int       @id @default(autoincrement())
+  provider_id    Int
+  exception_date DateTime  @db.Date
+  start_time     DateTime? @db.Time(6)
+  end_time       DateTime? @db.Time(6)
+  is_closed      Boolean?  @default(false)
+  reason         String?
+  users          users     @relation(fields: [provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([provider_id], map: "idx_provider_exceptions_provider_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This table contains exclusion constraints and requires additional setup for migrations. Visit https://pris.ly/d/exclusion-constraints for more info.
+model provider_slots {
+  id                                           Int            @id @default(autoincrement())
+  provider_id                                  Int
+  service_id                                   Int
+  slot_start                                   DateTime       @db.Timestamp(6)
+  slot_end                                     DateTime       @db.Timestamp(6)
+  is_booked                                    Boolean?       @default(false)
+  booking_id                                   Int?
+  bookings_bookings_slot_idToprovider_slots    bookings[]     @relation("bookings_slot_idToprovider_slots")
+  bookings_provider_slots_booking_idTobookings bookings?      @relation("provider_slots_booking_idTobookings", fields: [booking_id], references: [id], onUpdate: NoAction)
+  users                                        users          @relation(fields: [provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  services                                     services       @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  slot_pressure                                slot_pressure?
+
+  @@unique([provider_id, service_id, slot_start, slot_end], map: "unique_slot_per_service_per_provider")
+  @@index([booking_id], map: "idx_provider_slots_booking_id")
+  @@index([provider_id], map: "idx_provider_slots_provider")
+  @@index([service_id, provider_id, slot_start], map: "idx_provider_slots_service_provider_time")
+}
+
+model provider_verifications {
+  id                                              Int       @id @default(autoincrement())
+  user_id                                         Int?
+  document_type                                   String?   @db.VarChar(100)
+  document_url                                    String?
+  status                                          String?   @default("pending") @db.VarChar(50)
+  reviewed_by                                     Int?
+  reviewed_at                                     DateTime? @db.Timestamp(6)
+  notes                                           String?
+  created_at                                      DateTime? @default(now()) @db.Timestamp(6)
+  users_provider_verifications_reviewed_byTousers users?    @relation("provider_verifications_reviewed_byTousers", fields: [reviewed_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_provider_verifications_user_idTousers     users?    @relation("provider_verifications_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_verifications_user")
+}
+
+model refunds {
+  id                  BigInt               @id @default(autoincrement())
+  transaction_id      BigInt?
+  amount              Decimal?             @db.Decimal(18, 2)
+  reason              String?
+  status              String?              @db.VarChar(20)
+  created_at          DateTime?            @default(now()) @db.Timestamp(6)
+  wallet_transactions wallet_transactions? @relation(fields: [transaction_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([transaction_id], map: "idx_refunds_transaction_id")
+}
+
+model regions {
+  id                      Int                       @id @default(autoincrement())
+  name                    String                    @unique @db.VarChar(100)
+  country_full_info_final country_full_info_final[]
+  subregions              subregions[]
+}
+
+model reports {
+  id                                  Int       @id @default(autoincrement())
+  reporter_id                         Int?
+  target_user_id                      Int?
+  service_id                          Int?
+  reason                              String?   @db.VarChar(255)
+  description                         String?
+  status                              String?   @default("open") @db.VarChar(50)
+  created_at                          DateTime? @default(now()) @db.Timestamp(6)
+  reviewed_by                         Int?
+  reviewed_at                         DateTime? @db.Timestamp(6)
+  users_reports_reporter_idTousers    users?    @relation("reports_reporter_idTousers", fields: [reporter_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_reports_reviewed_byTousers    users?    @relation("reports_reviewed_byTousers", fields: [reviewed_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  services                            services? @relation(fields: [service_id], references: [id], onUpdate: NoAction)
+  users_reports_target_user_idTousers users?    @relation("reports_target_user_idTousers", fields: [target_user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at], map: "idx_reports_created")
+  @@index([status], map: "idx_reports_status")
+  @@index([target_user_id], map: "idx_reports_target")
+  @@index([target_user_id, status, created_at(sort: Desc)], map: "idx_reports_target_status_created")
+}
+
+model reviews {
+  id                               Int       @id @default(autoincrement())
+  booking_id                       Int?
+  reviewer_id                      Int?
+  provider_id                      Int?
+  rating                           Decimal   @db.Decimal(2, 1)
+  comment                          String?
+  created_at                       DateTime? @default(now()) @db.Timestamp(6)
+  verified                         Boolean?  @default(false)
+  response                         String?
+  bookings                         bookings? @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_reviews_provider_idTousers users?    @relation("reviews_provider_idTousers", fields: [provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_reviews_reviewer_idTousers users?    @relation("reviews_reviewer_idTousers", fields: [reviewer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([booking_id], map: "idx_reviews_booking_id")
+  @@index([created_at(sort: Desc)], map: "idx_reviews_created")
+  @@index([provider_id], map: "idx_reviews_provider")
+  @@index([provider_id, created_at(sort: Desc)], map: "idx_reviews_provider_created")
+  @@index([reviewer_id], map: "idx_reviews_reviewer_id")
+}
+
+model roles {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique @db.VarChar(50)
+  description String?
+  user_roles  user_roles[]
+}
+
+model service_accessibility {
+  service_id          Int
+  accessibility_id    Int
+  details             String?
+  accessibility_types accessibility_types @relation(fields: [accessibility_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  services            services            @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([service_id, accessibility_id])
+  @@index([accessibility_id], map: "idx_service_accessibility_accessibility")
+  @@index([service_id], map: "idx_service_accessibility_service")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model service_accessibility_score {
+  service_id          Int
+  accessibility_id    Int
+  score               Int?
+  accessibility_types accessibility_types @relation(fields: [accessibility_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  services            services            @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([service_id, accessibility_id])
+}
+
+model service_images {
+  id         Int       @id @default(autoincrement())
+  service_id Int?
+  image_url  String
+  is_main    Boolean?  @default(false)
+  services   services? @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([service_id], map: "idx_service_images_service_id")
+}
+
+model service_trust_scores {
+  id                  Int       @id @default(autoincrement())
+  service_id          Int       @unique(map: "uq_service_trust")
+  provider_id         Int
+  trust_score         Decimal?  @default(0) @db.Decimal(5, 2)
+  reliability_score   Decimal?  @default(0) @db.Decimal(5, 2)
+  response_time_score Decimal?  @default(0) @db.Decimal(5, 2)
+  cancellation_score  Decimal?  @default(0) @db.Decimal(5, 2)
+  created_at          DateTime? @default(now()) @db.Timestamp(6)
+  users               users     @relation(fields: [provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  services            services  @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([provider_id], map: "idx_service_trust_scores_provider_id")
+}
+
+model services {
+  id                          Int                           @id @default(autoincrement())
+  name                        String                        @db.VarChar(150)
+  description                 String?
+  price                       Decimal?                      @db.Decimal(10, 2)
+  created_at                  DateTime?                     @default(now()) @db.Timestamp(6)
+  provider_id                 Int?
+  duration_minutes            Int                           @default(30)
+  currency                    String                        @default("DZD") @db.VarChar(3)
+  category_id                 Int?
+  subcategory_id              Int?
+  country_id                  String?                       @db.Char(2)
+  city_id                     BigInt?
+  geom                        Unsupported("geography")?
+  avg_rating                  Decimal?                      @default(0) @db.Decimal(2, 1)
+  total_reviews               Int?                          @default(0)
+  badge                       String?                       @db.VarChar(50)
+  featured                    Boolean?                      @default(false)
+  is_active                   Boolean?                      @default(true)
+  image_url                   String?
+  bookings                    bookings[]
+  favorites                   favorites[]
+  payments                    payments[]
+  provider_slots              provider_slots[]
+  reports                     reports[]
+  service_accessibility       service_accessibility[]
+  service_accessibility_score service_accessibility_score[]
+  service_images              service_images[]
+  service_trust_scores        service_trust_scores?
+  categories                  categories?                   @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_services_category")
+  cities                      cities?                       @relation(fields: [city_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_services_city")
+  countries                   countries?                    @relation(fields: [country_id], references: [code], onDelete: NoAction, onUpdate: NoAction, map: "fk_services_country")
+  currencies                  currencies                    @relation(fields: [currency], references: [code], onDelete: NoAction, onUpdate: NoAction, map: "fk_services_currency")
+  subcategories               subcategories?                @relation(fields: [subcategory_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_services_subcategory")
+  users                       users?                        @relation(fields: [provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user_behavior_logs          user_behavior_logs[]
+
+  @@unique([provider_id, name], map: "services_provider_name_unique")
+  @@index([category_id], map: "idx_services_category")
+  @@index([city_id], map: "idx_services_city")
+  @@index([city_id, category_id], map: "idx_services_city_category")
+  @@index([country_id], map: "idx_services_country_id")
+  @@index([name(ops: raw("gin_trgm_ops"))], map: "idx_services_name_trgm", type: Gin)
+  @@index([price], map: "idx_services_price")
+  @@index([provider_id], map: "idx_services_provider")
+  @@index([provider_id, price], map: "idx_services_provider_price")
+  @@index([subcategory_id], map: "idx_services_subcategory_id")
+}
+
+model slot_pressure {
+  slot_id        Int            @id
+  booked_count   Int            @default(0)
+  last_checked   DateTime       @default(now()) @db.Timestamp(6)
+  provider_slots provider_slots @relation(fields: [slot_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}
+
+model subcategories {
+  id          Int         @id @default(autoincrement())
+  category_id Int?
+  name        String      @db.VarChar(100)
+  description String?
+  services    services[]
+  categories  categories? @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([category_id, name], map: "subcategories_unique")
+}
+
+model subregions {
+  id                      Int                       @id @default(autoincrement())
+  name                    String                    @unique @db.VarChar(100)
+  region_id               Int?
+  country_full_info_final country_full_info_final[]
+  regions                 regions?                  @relation(fields: [region_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([region_id], map: "idx_subregions_region_id")
+}
+
+model subscription_plans {
+  id                 Int                  @id @default(autoincrement())
+  name               String               @db.VarChar(50)
+  price              Decimal              @db.Decimal(10, 2)
+  duration_days      Int
+  benefits           String?
+  user_subscriptions user_subscriptions[]
+}
+
+model subscriptions {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  plan       String    @db.VarChar(50)
+  start_date DateTime? @default(now()) @db.Timestamp(6)
+  end_date   DateTime? @db.Timestamp(6)
+  active     Boolean?  @default(true)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_subscriptions_user_id")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model temp_iso3_raw {
+  id            String? @db.VarChar(3)
+  part          String? @db.VarChar(10)
+  scope         String? @db.VarChar(10)
+  language_type String? @db.VarChar(20)
+  ref_name      String? @db.VarChar(150)
+
+  @@ignore
+}
+
+model timezones {
+  name               String   @id @db.VarChar(100)
+  country_code       String?  @db.VarChar(2)
+  utc_offset_minutes Int?
+  dst                Boolean? @default(false)
+  gmt_label          String?  @db.VarChar(20)
+  cities             cities[]
+}
+
+model transaction_statuses {
+  id   Int    @id @default(autoincrement())
+  name String @unique @db.VarChar(50)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model user_accessibility_profile {
+  user_id             Int
+  accessibility_id    Int
+  severity_level      Int?
+  notes               String?
+  accessibility_types accessibility_types @relation(fields: [accessibility_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users               users               @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([user_id, accessibility_id])
+}
+
+model user_behavior_logs {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  service_id  Int?
+  action_type String?   @db.VarChar(50)
+  action_time DateTime? @default(now()) @db.Timestamp(6)
+  details     Json?
+  services    services? @relation(fields: [service_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users       users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_user_behavior_logs_user_id")
+}
+
+model user_chat_settings {
+  user_id        Int      @id
+  bubble_color   String?  @default("#E1FFC7") @db.VarChar(20)
+  text_color     String?  @default("#000000") @db.VarChar(20)
+  font_size      Int?     @default(14)
+  show_avatar    Boolean? @default(true)
+  show_timestamp Boolean? @default(true)
+  users          users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model user_devices {
+  id           Int       @id @default(autoincrement())
+  user_id      Int?
+  device_name  String?   @db.VarChar(150)
+  os           String?   @db.VarChar(50)
+  push_token   Json?
+  last_used_at DateTime? @db.Timestamp(6)
+  created_at   DateTime? @default(now()) @db.Timestamp(6)
+  users        users?    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([last_used_at], map: "idx_user_devices_last_used")
+  @@index([user_id], map: "idx_user_devices_user")
+  @@index([user_id, last_used_at(sort: Desc)], map: "idx_user_devices_user_last_used")
+}
+
+model user_files {
+  id         Int       @id @default(autoincrement())
+  user_id    Int?
+  file_type  String?   @db.VarChar(100)
+  url        String?
+  verified   Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  users      users?    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_user_files_user_id")
+}
+
+model user_presence {
+  user_id   Int       @id
+  is_online Boolean?  @default(false)
+  last_seen DateTime? @default(now()) @db.Timestamp(6)
+  users     users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model user_profiles {
+  user_id              Int       @id
+  name                 String?   @db.VarChar(120)
+  profile_image        String?
+  bio                  String?
+  social_links         Json?
+  language_preferences Json?
+  date_of_birth        DateTime? @db.Date
+  users                users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model user_roles {
+  user_id     Int
+  role_id     Int
+  assigned_at DateTime? @default(now()) @db.Timestamptz(6)
+  roles       roles     @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users       users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([user_id, role_id])
+}
+
+model user_settings {
+  user_id               Int   @id
+  accessibility         Json?
+  chat_settings         Json?
+  notification_settings Json?
+  users                 users @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model user_subscriptions {
+  id                 Int                 @id @default(autoincrement())
+  user_id            Int?
+  plan_id            Int?
+  start_date         DateTime            @db.Timestamp(6)
+  end_date           DateTime            @db.Timestamp(6)
+  status             String?             @default("active") @db.VarChar(20)
+  created_at         DateTime?           @default(now()) @db.Timestamp(6)
+  subscription_plans subscription_plans? @relation(fields: [plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users              users?              @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([plan_id], map: "idx_user_subscriptions_plan_id")
+  @@index([user_id], map: "idx_user_subscriptions_user_id")
+}
+
+model user_tokens {
+  id         Int      @id @default(autoincrement())
+  user_id    Int?
+  type       String   @db.VarChar(20)
+  token      String   @db.VarChar(255)
+  expires_at DateTime @db.Timestamptz(6)
+  is_used    Boolean? @default(false)
+  users      users?   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_user_tokens_user_id")
+}
+
+model users {
+  id                                                               Int                          @id @default(autoincrement())
+  email                                                            String                       @unique @db.VarChar(255)
+  password                                                         String?                      @db.VarChar(255)
+  role                                                             String?                      @default("user") @db.VarChar(50)
+  created_at                                                       DateTime?                    @default(now()) @db.Timestamp(6)
+  is_verified                                                      Boolean?                     @default(false)
+  email_verification_token                                         String?                      @db.VarChar(255)
+  email_verification_expires                                       BigInt?
+  password_reset_token                                             String?                      @db.VarChar(255)
+  password_reset_expires                                           BigInt?
+  failed_login_attempts                                            Int?                         @default(0)
+  lock_until                                                       BigInt?
+  provider                                                         String?                      @default("local") @db.VarChar(50)
+  token_version                                                    Int?                         @default(0)
+  name                                                             String?                      @db.VarChar(120)
+  refresh_token                                                    String?
+  language                                                         String?                      @default("en") @db.VarChar(5)
+  profile_image                                                    String?
+  bio                                                              String?
+  country                                                          String?                      @db.VarChar(100)
+  city                                                             String?                      @db.VarChar(100)
+  accessibility_mode                                               Boolean?                     @default(false)
+  font_scale                                                       Int?                         @default(1)
+  high_contrast                                                    Boolean?                     @default(false)
+  voice_enabled                                                    Boolean?                     @default(false)
+  rating                                                           Decimal?                     @default(0) @db.Decimal(2, 1)
+  total_reviews                                                    Int?                         @default(0)
+  timezone                                                         String?                      @default("Africa/Algiers") @db.VarChar(50)
+  currency_code                                                    String?                      @db.VarChar(3)
+  provider_uid                                                     String?                      @db.VarChar(255)
+  country_code                                                     String?                      @db.Char(2)
+  city_id                                                          BigInt?
+  trust_score                                                      Int?                         @default(50)
+  response_rate                                                    Float?                       @default(0)
+  cancellation_rate                                                Float?                       @default(0)
+  completed_bookings_count                                         Int?                         @default(0)
+  average_rating                                                   Float?                       @default(0)
+  risk_score                                                       Float?                       @default(0)
+  currency                                                         String?                      @default("USD") @db.VarChar(3)
+  ai_budget_profiles                                               ai_budget_profiles[]
+  ai_user_interactions                                             ai_user_interactions[]
+  audit_logs                                                       audit_logs[]
+  availability                                                     availability[]
+  bookings_bookings_user_idTousers                                 bookings[]                   @relation("bookings_user_idTousers")
+  bookings_bookings_provider_idTousers                             bookings[]                   @relation("bookings_provider_idTousers")
+  cashback_rewards                                                 cashback_rewards[]
+  chat_deleted                                                     chat_deleted[]
+  chat_messages                                                    chat_messages[]
+  chat_participants                                                chat_participants[]
+  chat_reactions                                                   chat_reactions[]
+  chat_typing_status                                               chat_typing_status[]
+  device_sessions                                                  device_sessions[]
+  favorites                                                        favorites[]
+  kyc_verifications                                                kyc_verifications[]
+  merchants                                                        merchants[]
+  notifications                                                    notifications[]
+  payments                                                         payments[]
+  provider_exceptions                                              provider_exceptions[]
+  provider_slots                                                   provider_slots[]
+  provider_verifications_provider_verifications_reviewed_byTousers provider_verifications[]     @relation("provider_verifications_reviewed_byTousers")
+  provider_verifications_provider_verifications_user_idTousers     provider_verifications[]     @relation("provider_verifications_user_idTousers")
+  reports_reports_reporter_idTousers                               reports[]                    @relation("reports_reporter_idTousers")
+  reports_reports_reviewed_byTousers                               reports[]                    @relation("reports_reviewed_byTousers")
+  reports_reports_target_user_idTousers                            reports[]                    @relation("reports_target_user_idTousers")
+  reviews_reviews_provider_idTousers                               reviews[]                    @relation("reviews_provider_idTousers")
+  reviews_reviews_reviewer_idTousers                               reviews[]                    @relation("reviews_reviewer_idTousers")
+  service_trust_scores                                             service_trust_scores[]
+  services                                                         services[]
+  subscriptions                                                    subscriptions[]
+  user_accessibility_profile                                       user_accessibility_profile[]
+  user_behavior_logs                                               user_behavior_logs[]
+  user_chat_settings                                               user_chat_settings?
+  user_devices                                                     user_devices[]
+  user_files                                                       user_files[]
+  user_presence                                                    user_presence?
+  user_profiles                                                    user_profiles?
+  user_roles                                                       user_roles[]
+  user_settings                                                    user_settings?
+  user_subscriptions                                               user_subscriptions[]
+  user_tokens                                                      user_tokens[]
+  cities                                                           cities?                      @relation(fields: [city_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_users_city")
+  countries                                                        countries?                   @relation(fields: [country_code], references: [code], onDelete: NoAction, onUpdate: NoAction, map: "fk_users_country")
+  currencies                                                       currencies?                  @relation(fields: [currency_code], references: [code], onDelete: Restrict, map: "fk_users_currency")
+  wallets                                                          wallets[]
+
+  @@index([city_id], map: "idx_users_city_id")
+  @@index([country_code], map: "idx_users_country_code")
+  @@index([provider_uid], map: "idx_users_provider_uid")
+}
+
+model wallet_limits {
+  id            BigInt    @id @default(autoincrement())
+  wallet_id     BigInt?
+  daily_limit   Decimal?  @db.Decimal(18, 2)
+  monthly_limit Decimal?  @db.Decimal(18, 2)
+  created_at    DateTime? @default(now()) @db.Timestamp(6)
+  wallets       wallets?  @relation(fields: [wallet_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([wallet_id], map: "idx_wallet_limits_wallet_id")
+}
+
+model wallet_topups {
+  id         BigInt    @id @default(autoincrement())
+  wallet_id  BigInt?
+  amount     Decimal?  @db.Decimal(18, 2)
+  method     String?   @db.VarChar(50)
+  status     String?   @db.VarChar(20)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  wallets    wallets?  @relation(fields: [wallet_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([wallet_id], map: "idx_wallet_topups_wallet_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model wallet_transactions {
+  id               BigInt             @id @default(autoincrement())
+  wallet_id        BigInt?
+  type             String?            @db.VarChar(20)
+  amount           Decimal?           @db.Decimal(18, 2)
+  currency_code    String?            @db.VarChar(10)
+  status           String?            @db.VarChar(20)
+  reference_id     BigInt?
+  created_at       DateTime?          @default(now()) @db.Timestamp(6)
+  booking_payments booking_payments[]
+  cashback_rewards cashback_rewards[]
+  fraud_checks     fraud_checks[]
+  refunds          refunds[]
+  wallets          wallets?           @relation(fields: [wallet_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([created_at], map: "idx_transactions_created")
+  @@index([wallet_id], map: "idx_transactions_wallet")
+  @@index([wallet_id, created_at(sort: Desc)], map: "idx_wallet_transactions_wallet_created")
+}
+
+model wallet_withdrawals {
+  id         BigInt    @id @default(autoincrement())
+  wallet_id  BigInt?
+  amount     Decimal?  @db.Decimal(18, 2)
+  method     String?   @db.VarChar(50)
+  status     String?   @db.VarChar(20)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  wallets    wallets?  @relation(fields: [wallet_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([wallet_id], map: "idx_wallet_withdrawals_wallet_id")
+}
+
+model wallets {
+  id                  BigInt                @id @default(autoincrement())
+  user_id             Int?
+  currency_code       String?               @db.VarChar(10)
+  balance             Decimal?              @default(0) @db.Decimal(18, 2)
+  status              String?               @default("active") @db.VarChar(20)
+  created_at          DateTime?             @default(now()) @db.Timestamp(6)
+  wallet_limits       wallet_limits[]
+  wallet_topups       wallet_topups[]
+  wallet_transactions wallet_transactions[]
+  wallet_withdrawals  wallet_withdrawals[]
+  currencies          currencies?           @relation(fields: [currency_code], references: [code], onDelete: NoAction, onUpdate: NoAction)
+  users               users?                @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([currency_code], map: "idx_wallets_currency_code")
+  @@index([user_id], map: "idx_wallets_user")
+}
