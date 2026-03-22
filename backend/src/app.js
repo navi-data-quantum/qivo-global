@@ -18,14 +18,12 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 
 const { errorHandler, notFound } = require("./middleware/errorMiddleware");
-const pool = require("./config/db");
+const { pool, connectDB } = require("./config/db");
 
 const app = express();
-
 const NODE_ENV = process.env.NODE_ENV || "development";
 
 app.set("trust proxy", 1);
-
 app.disable("x-powered-by");
 app.use(helmet());
 app.use(hpp());
@@ -67,7 +65,12 @@ const authLimiter = rateLimit({
 });
 
 app.use("/api", apiLimiter);
-app.use("/api/v1/auth", authLimiter);
+app.use("/api/v1/auth", authLimiter, authRoutes);
+app.use("/api/v1/services", serviceRoutes);
+app.use("/api/v1/bookings", bookingRoutes);
+app.use("/api/v1/chat", chatRoutes);
+app.use("/api/v1/categories", categoryRoutes);
+app.use("/api/v1/notifications", notificationRoutes);
 
 app.get("/", (req, res) => {
   res.status(200).json({
@@ -106,22 +109,35 @@ app.get("/geo-test", (req, res) => {
 
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 
-app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/services", serviceRoutes);
-app.use("/api/v1/bookings", bookingRoutes);
-app.use("/api/v1/chat", chatRoutes);
-app.use("/api/v1/categories", categoryRoutes);
-app.use("/api/v1/notifications", notificationRoutes);
-
 app.use(notFound);
 app.use(errorHandler);
 
+const startServer = async () => {
+  try {
+    await connectDB();
+    app.listen(process.env.PORT || 5000, process.env.HOST || "0.0.0.0", () => {
+      logger.info(
+        `Server running in ${NODE_ENV} mode on http://${process.env.HOST || "0.0.0.0"}:${process.env.PORT || 5000}`
+      );
+    });
+  } catch (error) {
+    logger.error("Server failed to start: %s", error.message);
+    process.exit(1);
+  }
+};
+
+startServer();
+
+process.on("unhandledRejection", (err) => {
+  logger.error("Unhandled Rejection: %s", err.message);
+  process.exit(1);
+});
+
+process.on("uncaughtException", (err) => {
+  logger.error("Uncaught Exception: %s", err.message);
+  process.exit(1);
+});
+
 module.exports = app;
-
-
-
-
-
-
 
 

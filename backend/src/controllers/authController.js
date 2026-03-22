@@ -4,12 +4,10 @@ const crypto = require("crypto");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const sendEmail = require("../utils/email");
-const { PrismaClient } = require("@prisma/client");
-const { TranslationService } = require("../services/translation.service");
+const TranslationService = require("../locales/translation.service");
 const { sendResetPasswordEmail } = require("../services/emailService");
 
-const prisma = new PrismaClient();
-const tService = new TranslationService(prisma);
+const tService = new TranslationService();
 
 const {
   createUser,
@@ -27,7 +25,7 @@ const {
   findUserByResetToken,
   updateUserPassword,
   clearPasswordResetToken,
-  updateUserLanguage,
+  updateUserLanguage
 } = require("../models/user/userModel");
 
 const generateAccessToken = (user) =>
@@ -38,13 +36,17 @@ const generateAccessToken = (user) =>
   );
 
 const generateRefreshToken = (user) =>
-  jwt.sign({ id: user.id, tokenVersion: user.token_version }, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
+  jwt.sign(
+    { id: user.id, tokenVersion: user.token_version },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: "7d" }
+  );
 
 const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "strict",
-  maxAge: 7 * 24 * 60 * 60 * 1000,
+  maxAge: 7 * 24 * 60 * 60 * 1000
 };
 
 const MAX_ATTEMPTS = 5;
@@ -54,34 +56,29 @@ const register = asyncHandler(async (req, res) => {
   const { name, email, password, language } = req.body;
   const existing = await findUserByEmail(email);
   if (existing) throw new AppError(await tService.t("EMAIL_EXISTS", language), 409);
-
   const hashedPassword = await bcrypt.hash(password, 12);
   const rawEmailToken = crypto.randomBytes(32).toString("hex");
   const hashedEmailToken = crypto.createHash("sha256").update(rawEmailToken).digest("hex");
   const emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000;
-
   const user = await createUser(name, email, hashedPassword, hashedEmailToken, emailVerificationExpires, language);
   const verifyUrl = `${process.env.NEXT_PUBLIC_API_URL}/auth/verify-email/${rawEmailToken}`;
-
   await sendEmail({
     to: user.email,
     subject: await tService.t("VERIFY_EMAIL_SUBJECT", language),
-    html: `<p>${await tService.t("HELLO", language)} ${user.name}, ${await tService.t("VERIFY_EMAIL_BODY", language)} <a href="${verifyUrl}">here</a>.</p>`,
+    html: `<p>${await tService.t("HELLO", language)} ${user.name}, ${await tService.t("VERIFY_EMAIL_BODY", language)} <a href="${verifyUrl}">here</a>.</p>`
   });
-
   res.status(201).json({
     success: true,
     message: await tService.t("USER_CREATED_VERIFY_EMAIL", language),
-    user: { id: user.id, name: user.name, email: user.email, language: user.language },
-    ...(process.env.NODE_ENV === "development" && { verificationToken: rawEmailToken }),
+    user: { id: user.id, name: user.name, email: user.email, language: user.language }
   });
 });
 
 const verifyEmail = asyncHandler(async (req, res) => {
   const hashed = crypto.createHash("sha256").update(req.params.token).digest("hex");
   const user = await verifyUserEmail(hashed);
-  if (!user) throw new AppError(await tService.t("INVALID_EXPIRED_TOKEN", user?.language || "en"), 400);
-  res.json({ success: true, message: await tService.t("EMAIL_VERIFIED", user.language) });
+  if (!user) throw new AppError(await tService.t("INVALID_EXPIRED_TOKEN", "en"), 400);
+  res.redirect(`${process.env.FRONTEND_URL}/email-verified`);
 });
 
 const login = asyncHandler(async (req, res) => {
@@ -90,14 +87,12 @@ const login = asyncHandler(async (req, res) => {
   if (!user) throw new AppError(await tService.t("INVALID_CREDENTIALS", "en"), 401);
   if (!user.is_verified) throw new AppError(await tService.t("EMAIL_NOT_VERIFIED", user.language), 403);
   if (user.lock_until && user.lock_until > Date.now()) throw new AppError(await tService.t("ACCOUNT_LOCKED", user.language), 423);
-
   const match = await bcrypt.compare(password, user.password);
   if (!match) {
     const attempts = await incrementLoginAttempts(user.id);
     if (attempts >= MAX_ATTEMPTS) await lockAccount(user.id, Date.now() + LOCK_TIME);
     throw new AppError(await tService.t("INVALID_CREDENTIALS", user.language), 401);
   }
-
   await resetLoginAttempts(user.id);
   const accessToken = generateAccessToken(user);
   const refreshRaw = generateRefreshToken(user);
@@ -110,19 +105,15 @@ const login = asyncHandler(async (req, res) => {
 const refreshToken = asyncHandler(async (req, res) => {
   const token = req.cookies.refreshToken;
   if (!token) throw new AppError(await tService.t("NOT_AUTHENTICATED", "en"), 401);
-
   let decoded;
   try { decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET); } catch { throw new AppError(await tService.t("INVALID_EXPIRED_TOKEN", "en"), 401); }
-
   const user = await findUserById(decoded.id);
   if (!user) throw new AppError(await tService.t("USER_NOT_FOUND", "en"), 404);
   if (decoded.tokenVersion !== user.token_version) throw new AppError(await tService.t("TOKEN_REVOKED", user.language), 403);
-
   const stored = await findRefreshTokenByUserId(user.id);
   if (!stored) throw new AppError(await tService.t("TOKEN_MISMATCH", user.language), 403);
   const match = await bcrypt.compare(token, stored);
   if (!match) throw new AppError(await tService.t("TOKEN_MISMATCH", user.language), 403);
-
   const newAccess = generateAccessToken(user);
   const newRefreshRaw = generateRefreshToken(user);
   const newHashed = await bcrypt.hash(newRefreshRaw, 10);
@@ -147,19 +138,14 @@ const logout = asyncHandler(async (req, res) => {
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
   const user = await findUserByEmail(email);
-
   if (user) {
     const rawToken = crypto.randomBytes(32).toString("hex");
     const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
     const expires = Date.now() + 10 * 60 * 1000;
     await savePasswordResetToken(user.id, hashedToken, expires);
-
-    const resetUrl = `${process.env.NEXT_PUBLIC_API_URL}/reset-password/${rawToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${rawToken}`;
     await sendResetPasswordEmail(user.email, resetUrl, user.name);
-
-    if (process.env.NODE_ENV === "development") return res.json({ success: true, resetToken: rawToken });
   }
-
   res.json({ success: true, message: await tService.t("RESET_PASSWORD_SENT_IF_EXISTS", "en") });
 });
 
@@ -168,11 +154,9 @@ const resetPassword = asyncHandler(async (req, res) => {
   const hashed = crypto.createHash("sha256").update(token).digest("hex");
   const user = await findUserByResetToken(hashed);
   if (!user) throw new AppError(await tService.t("INVALID_EXPIRED_TOKEN", "en"), 400);
-
   const newHashedPassword = await bcrypt.hash(newPassword, 12);
   await updateUserPassword(user.id, newHashedPassword);
   await clearPasswordResetToken(user.id);
-
   res.json({ success: true, message: await tService.t("PASSWORD_UPDATED", user.language) });
 });
 

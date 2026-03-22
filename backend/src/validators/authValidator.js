@@ -5,9 +5,7 @@ const strongPasswordPattern =
 
 const registerSchema = Joi.object({
   name: Joi.string().trim().min(3).max(50).required(),
-
   email: Joi.string().trim().lowercase().email().required(),
-
   password: Joi.string()
     .min(8)
     .max(30)
@@ -17,16 +15,13 @@ const registerSchema = Joi.object({
       "string.pattern.base":
         "Password must contain uppercase, lowercase, number and special character",
     }),
-
   confirmPassword: Joi.any()
     .valid(Joi.ref("password"))
     .required()
     .messages({
       "any.only": "Passwords must match",
     }),
-
   role: Joi.string().valid("user", "provider", "admin").default("user"),
-
   language: Joi.string()
     .valid("en", "fr", "es", "ar", "de")
     .default("en"),
@@ -37,7 +32,17 @@ const loginSchema = Joi.object({
   password: Joi.string().required(),
 }).options({ abortEarly: false });
 
+const resetPasswordSchema = Joi.object({
+  token: Joi.string().required(),
+  newPassword: Joi.string()
+    .min(8)
+    .max(30)
+    .pattern(strongPasswordPattern)
+    .required()
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
+  resetPasswordSchema
 };

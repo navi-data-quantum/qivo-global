@@ -1,16 +1,23 @@
 {
   "compilerOptions": {
+    "target": "ES2020",
     "module": "commonjs",
-    "target": "es2020",
     "moduleResolution": "node",
+    "rootDir": "src",
+    "outDir": "dist",
     "esModuleInterop": true,
+    "resolveJsonModule": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "dist"
+    "sourceMap": true,
+    "declaration": false,
+    "incremental": true,
+    "allowJs": true,
+    "types": ["node"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src", "src/prisma.config.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -1,5 +1,6 @@
-const admin = require("firebase-admin");
+const admin = require("../config/firebaseAdmin");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const { findUserById, saveRefreshToken } = require("../models/user/userModel");
@@ -17,26 +18,37 @@ const firebaseLogin = asyncHandler(async (req, res) => {
 
   const decodedToken = await admin.auth().verifyIdToken(idToken);
 
-  let user = await findUserById(decodedToken.uid);
+  const user = await findUserById(decodedToken.uid);
   if (!user) throw new AppError("User not found", 404);
 
   const accessToken = jwt.sign(
     { id: user.id, role: user.role, tokenVersion: user.token_version, language: user.language },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN }
+    { expiresIn: "15m" }
   );
 
   const refreshRaw = jwt.sign(
     { id: user.id, tokenVersion: user.token_version },
     process.env.JWT_REFRESH_SECRET,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+    { expiresIn: "7d" }
   );
 
-  await saveRefreshToken(user.id, refreshRaw);
+  const hashed = await bcrypt.hash(refreshRaw, 10);
+
+  await saveRefreshToken(user.id, hashed);
 
   res.cookie("refreshToken", refreshRaw, cookieOptions);
 
-  res.status(200).json({ user: { id: user.id, name: user.name, email: user.email, role: user.role, language: user.language }, accessToken });
+  res.status(200).json({
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      language: user.language
+    },
+    accessToken
+  });
 });
 
 module.exports = { firebaseLogin };

@@ -5,7 +5,6 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
-
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model accessibility_types {
   id                          Int                           @id @default(autoincrement())
@@ -319,6 +318,7 @@ model cities {
   @@index([country_code], map: "idx_cities_country")
   @@index([lat, lon], map: "idx_cities_geo")
   @@index([geom], map: "idx_cities_geom", type: Gist)
+  @@index([geom], map: "idx_cities_geom_gist", type: Gist)
   @@index([name], map: "idx_cities_name")
   @@index([timezone_name], map: "idx_cities_timezone_name")
 }
@@ -1106,7 +1106,7 @@ model users {
   timezone                                                         String?                      @default("Africa/Algiers") @db.VarChar(50)
   currency_code                                                    String?                      @db.VarChar(3)
   provider_uid                                                     String?                      @db.VarChar(255)
-  country_code                                                     String?                      @db.Char(2)
+  country_code                                                     String                       @default("VA") @db.Char(2)
   city_id                                                          BigInt?
   trust_score                                                      Int?                         @default(50)
   response_rate                                                    Float?                       @default(0)
@@ -1157,7 +1157,7 @@ model users {
   user_subscriptions                                               user_subscriptions[]
   user_tokens                                                      user_tokens[]
   cities                                                           cities?                      @relation(fields: [city_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_users_city")
-  countries                                                        countries?                   @relation(fields: [country_code], references: [code], onDelete: NoAction, onUpdate: NoAction, map: "fk_users_country")
+  countries                                                        countries                    @relation(fields: [country_code], references: [code], onDelete: NoAction, onUpdate: NoAction, map: "fk_users_country")
   currencies                                                       currencies?                  @relation(fields: [currency_code], references: [code], onDelete: Restrict, map: "fk_users_currency")
   wallets                                                          wallets[]
 

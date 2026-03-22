@@ -2,13 +2,11 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+RUN apk add --no-cache openssl python3 make g++ bash
+
 COPY package*.json ./
 
-RUN npm config set fetch-retries 5 \
- && npm config set fetch-retry-mintimeout 20000 \
- && npm config set fetch-retry-maxtimeout 120000 \
- && npm config set registry https://registry.npmjs.org/ \
- && npm install --omit=dev
+RUN npm install --omit=dev --no-audit --no-fund
 
 COPY . .
 
@@ -16,4 +14,4 @@ ENV NODE_ENV=production
 
 EXPOSE 5000
 
-CMD ["node", "src/server.js"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && node server.js"]
