@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 import { Lock, Eye, EyeOff, ShieldCheck } from "lucide-react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Lottie from "lottie-react";
 import resetAnimation from "@/public/animations/password-reset.json";
 
 export default function ResetPasswordForm() {
 
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+  const params = useParams();
+  const token = params.token as string;
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -20,6 +20,10 @@ export default function ResetPasswordForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!token) {
+      return setError("Invalid or missing token");
+    }
 
     if (password !== confirmPassword) {
       return setError("Passwords do not match");
@@ -36,7 +40,7 @@ export default function ResetPasswordForm() {
         },
         body: JSON.stringify({
           token,
-          password
+          newPassword: password
         })
       });
 
@@ -59,9 +63,7 @@ export default function ResetPasswordForm() {
     <div className="flex flex-col lg:flex-row min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black text-white">
 
       <div className="hidden lg:flex w-1/2 items-center justify-center border-r border-zinc-800">
-
         <div className="max-w-lg px-10 text-center">
-
           <h1 className="text-6xl font-extrabold mb-6 tracking-tight bg-gradient-to-r from-white to-zinc-500 bg-clip-text text-transparent">
             QIVO
           </h1>
@@ -71,24 +73,14 @@ export default function ResetPasswordForm() {
           </p>
 
           <div className="mt-12 flex justify-center">
-
             <div className="w-80 drop-shadow-2xl">
-
-              <Lottie
-                animationData={resetAnimation}
-                loop
-              />
-
+              <Lottie animationData={resetAnimation} loop />
             </div>
-
           </div>
-
         </div>
-
       </div>
 
       <div className="flex w-full lg:w-1/2 items-center justify-center px-6">
-
         <div className="w-full max-w-md p-10 rounded-3xl bg-zinc-900/70 backdrop-blur-2xl border border-zinc-800 shadow-2xl">
 
           <div className="flex justify-center mb-6">
@@ -110,7 +102,6 @@ export default function ResetPasswordForm() {
           <form onSubmit={handleSubmit} className="space-y-5">
 
             <div className="relative group">
-
               <Lock className="absolute left-3 top-3.5 text-zinc-500 group-focus-within:text-white transition" size={20} />
 
               <input
@@ -129,11 +120,9 @@ export default function ResetPasswordForm() {
               >
                 {show ? <EyeOff size={18}/> : <Eye size={18}/>}
               </button>
-
             </div>
 
             <div className="relative group">
-
               <Lock className="absolute left-3 top-3.5 text-zinc-500 group-focus-within:text-white transition" size={20} />
 
               <input
@@ -144,7 +133,6 @@ export default function ResetPasswordForm() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full pl-10 p-3 bg-black/50 border border-zinc-700 rounded-xl focus:outline-none focus:border-white transition"
               />
-
             </div>
 
             <button
@@ -158,7 +146,6 @@ export default function ResetPasswordForm() {
           </form>
 
         </div>
-
       </div>
 
     </div>
