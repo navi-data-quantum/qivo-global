@@ -6,6 +6,7 @@ const { initGeo } = require("./src/services/geoService");
 const { Server } = require("socket.io");
 
 const server = http.createServer(app);
+
 const io = new Server(server, {
   cors: { origin: "*" },
 });
@@ -22,27 +23,23 @@ io.on("connection", (socket) => {
   socket.on("sendMessage", ({ sessionId, message }) => {
     io.to(`session_${sessionId}`).emit("newMessage", message);
   });
-
-  socket.on("disconnect", () => {});
 });
 
 async function startServer() {
-  try {
-    await pool.connectDB();
-    await initGeo();
-
+  await pool.connectDB();
+  await initGeo();
+  if (!server.listening) {
     server.listen(config.server.port, config.server.host, () => {
       console.log(`🚀 Server running on ${config.server.host}:${config.server.port}`);
       console.log(`🌍 Environment: ${config.env}`);
       console.log("🌎 GeoIP Ready ✅");
     });
-  } catch (err) {
-    console.error("❌ Failed to start server:", err);
-    process.exit(1);
   }
 }
 
-startServer();
+if (!process.env.IS_DOCKER) {
+  startServer();
+}
 
 
 

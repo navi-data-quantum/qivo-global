@@ -1,42 +1,35 @@
-const admin = require("firebase-admin");
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
-const { findUserById, saveRefreshToken } = require("../models/user/userModel");
+const { findUserById } = require("../models/user/userModel");
 
-const cookieOptions = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "strict",
-  maxAge: 7 * 24 * 60 * 60 * 1000
-};
+const protect = asyncHandler(async (req, res, next) => {
+  let token;
 
-const firebaseLogin = asyncHandler(async (req, res) => {
-  const { idToken } = req.body;
-  if (!idToken) throw new AppError("ID Token required", 400);
+  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+    token = req.headers.authorization.split(" ")[1];
+  }
 
-  const decodedToken = await admin.auth().verifyIdToken(idToken);
+  if (!token) {
+    throw new AppError("Not authorized", 401);
+  }
 
-  let user = await findUserById(decodedToken.uid);
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+  const user = await findUserById(decoded.id);
   if (!user) throw new AppError("User not found", 404);
 
-  const accessToken = jwt.sign(
-    { id: user.id, role: user.role, tokenVersion: user.token_version, language: user.language },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN }
-  );
-
-  const refreshRaw = jwt.sign(
-    { id: user.id, tokenVersion: user.token_version },
-    process.env.JWT_REFRESH_SECRET,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
-  );
-
-  await saveRefreshToken(user.id, refreshRaw);
-
-  res.cookie("refreshToken", refreshRaw, cookieOptions);
-
-  res.status(200).json({ user: { id: user.id, name: user.name, email: user.email, role: user.role, language: user.language }, accessToken });
+  req.user = user;
+  next();
 });
 
-module.exports = { firebaseLogin };
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return next(new AppError("Not authorized", 403));
+    }
+    next();
+  };
+};
+
+module.exports = { protect, authorize };
